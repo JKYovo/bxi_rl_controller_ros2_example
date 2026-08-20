@@ -1,0 +1,54 @@
+schema: 1
+id: com.bxi.zj_new_easy_v3
+name: 张杰 new easy V3
+version: 1.0.0
+api: ">=4,<5"
+enable: true
+entrypoint: plugin:create_mod
+visibility: protected
+requires:
+  - id: com.bxi.basic_actions
+    version: ">=1,<2"
+conflicts: []
+python_exports: []
+runtime_requirements:
+  python: []
+  ros: []
+  system: []
+
+events:
+  activate:
+    slot: btn_10
+    value: 19
+  toggle_pause:
+    slot: btn_9
+    value: 1
+states:
+  zj_new_easy_v3:
+    manifest:
+      label: 张杰 new easy V3
+      priority: 830
+      group: Advanced
+      icon: wand_stars
+      confirm: true
+      confirm_message: 请确保机器人周围5米范围内没有障碍物
+routes:
+  - from: com.bxi.basic_actions/normal
+    event: activate
+    to: zj_new_easy_v3
+    transition:
+      profile: dual_running_blend
+      duration: 1.0
+  - from: zj_new_easy_v3
+    event: com.bxi.basic_actions/normal
+    to: com.bxi.basic_actions/normal
+    transition:
+      profile: dual_running_blend
+      duration: 1.0
+actions:
+  - from: zj_new_easy_v3
+    event: toggle_pause
+    action: toggle_pause
+    manifest:
+      label: 暂停/继续
+      ui: pause

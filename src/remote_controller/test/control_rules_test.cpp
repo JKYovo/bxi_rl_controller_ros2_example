@@ -295,6 +295,95 @@ void test_three_button_chord_excludes_two_button_x_chords()
     }
 }
 
+void test_lb_rb_a_selects_holomotion()
+{
+    const RemoteConfig config = remote_controller::load_remote_config(
+        REMOTE_CONTROLLER_TEST_CONFIG_PATH);
+    InputMapper mapper(config);
+    mapper.set_signals({
+        {"js.button.6", 1.0},
+        {"js.button.7", 1.0},
+        {"js.button.0", 1.0},
+        {"js.axis.5", 0.0},
+        {"js.axis.4", 0.0},
+    });
+
+    communication::msg::MotionCommands message;
+    mapper.fill_message(message);
+    expect(message.btn_10 == 55);
+}
+
+void test_lb_rb_b_and_shift_4_select_rgmt()
+{
+    const RemoteConfig config = remote_controller::load_remote_config(
+        REMOTE_CONTROLLER_TEST_CONFIG_PATH);
+    {
+        InputMapper mapper(config);
+        mapper.set_signals({
+            {"js.button.6", 1.0},
+            {"js.button.7", 1.0},
+            {"js.button.1", 1.0},
+            {"js.axis.5", 0.0},
+            {"js.axis.4", 0.0},
+        });
+
+        communication::msg::MotionCommands message;
+        mapper.fill_message(message);
+        expect(message.btn_10 == 56);
+    }
+    {
+        InputMapper mapper(config);
+        mapper.handle_keyboard_key('$');
+
+        communication::msg::MotionCommands message;
+        mapper.fill_message(message);
+        expect(message.btn_10 == 56);
+    }
+}
+
+void test_rb_b_selects_pd_and_lb_rb_lt_x_and_shift_5_select_three_actor_walk()
+{
+    const RemoteConfig config = remote_controller::load_remote_config(
+        REMOTE_CONTROLLER_TEST_CONFIG_PATH);
+    {
+        InputMapper mapper(config);
+        mapper.set_signals({
+            {"js.button.6", 0.0},
+            {"js.button.7", 1.0},
+            {"js.axis.5", 0.0},
+            {"js.axis.4", 0.0},
+            {"js.button.1", 1.0},
+        });
+
+        communication::msg::MotionCommands message;
+        mapper.fill_message(message);
+        expect(message.btn_3 == 1);
+        expect(message.btn_10 == 0);
+    }
+    {
+        InputMapper mapper(config);
+        mapper.set_signals({
+            {"js.button.6", 1.0},
+            {"js.button.7", 1.0},
+            {"js.axis.5", 1.0},
+            {"js.axis.4", 0.0},
+            {"js.button.3", 1.0},
+        });
+
+        communication::msg::MotionCommands message;
+        mapper.fill_message(message);
+        expect(message.btn_10 == 37);
+    }
+    {
+        InputMapper mapper(config);
+        mapper.handle_keyboard_key('%');
+
+        communication::msg::MotionCommands message;
+        mapper.fill_message(message);
+        expect(message.btn_10 == 37);
+    }
+}
+
 void test_all_auxiliary_and_face_button_combinations_are_reserved()
 {
     struct ExpectedOutput
@@ -308,7 +397,7 @@ void test_all_auxiliary_and_face_button_combinations_are_reserved()
         {{10, 11}, {1, 2}, {9, 1}, {10, 12}},
         {{6, 1}, {7, 1}, {5, 1}, {8, 1}},
         {{2, 1}, {3, 1}, {1, 1}, {4, 1}},
-        {{10, 13}, {10, 14}, {10, 9}, {10, 10}},
+        {{10, 55}, {10, 56}, {10, 9}, {10, 10}},
         {{10, 3}, {10, 4}, {10, 1}, {10, 2}},
         {{10, 15}, {10, 16}, {10, 17}, {10, 18}},
         {{10, 23}, {10, 24}, {10, 25}, {10, 26}},
@@ -377,6 +466,9 @@ int main()
     test_debug_reports_changed_rule_selection();
     test_filtered_analog_snaps_zero_without_blocking_valid_input();
     test_three_button_chord_excludes_two_button_x_chords();
+    test_lb_rb_a_selects_holomotion();
+    test_lb_rb_b_and_shift_4_select_rgmt();
+    test_rb_b_selects_pd_and_lb_rb_lt_x_and_shift_5_select_three_actor_walk();
     test_all_auxiliary_and_face_button_combinations_are_reserved();
     return 0;
 }

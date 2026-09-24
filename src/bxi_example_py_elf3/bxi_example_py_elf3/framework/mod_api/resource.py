@@ -9,7 +9,13 @@ from typing import Generic, Literal, Protocol, TypeAlias, TypeVar
 ResourceT = TypeVar("ResourceT")
 ResourceFactory = Callable[["ResourceLoadContext"], ResourceT]
 ResourcePolicy: TypeAlias = Literal["startup", "on_demand"]
-ResourceStatus: TypeAlias = Literal["unloaded", "loading", "ready", "failed"]
+ResourceStatus: TypeAlias = Literal[
+    "unloaded",
+    "loading",
+    "ready",
+    "unloading",
+    "failed",
+]
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,9 @@ class _ResourceResolver(Protocol):
     def request(self, key: ResourceKey[ResourceT]) -> None:
         ...
 
+    def release(self, key: ResourceKey[ResourceT]) -> None:
+        ...
+
     def status(self, key: ResourceKey[ResourceT]) -> ResourceStatus:
         ...
 
@@ -74,6 +83,10 @@ class ResourceHandle(Generic[ResourceT]):
     def request(self) -> None:
         """Request asynchronous preparation without waiting for completion."""
         self._manager.request(self._key)
+
+    def release(self) -> None:
+        """Asynchronously close and unload an on-demand resource."""
+        self._manager.release(self._key)
 
     @property
     def status(self) -> ResourceStatus:

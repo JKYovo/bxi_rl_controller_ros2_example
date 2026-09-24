@@ -36,6 +36,8 @@ class _ResourceProvider(Generic[ResourceT]):
     status: ResourceStatus = "unloaded"
     error: BaseException | None = None
     completed: Event = field(default_factory=Event)
+    release_after_load: bool = False
+    reload_after_unload: bool = False
 
 
 class ResourceManager:
@@ -45,7 +47,9 @@ class ResourceManager:
         self._providers: dict[str, _ResourceProvider[object]] = {}
         self._cpu_affinity = cpu_affinity
         self._lock = Lock()
-        self._requests: Queue[_ResourceProvider[object] | None] = Queue()
+        self._requests: Queue[
+            tuple[str, _ResourceProvider[object]] | None
+        ] = Queue()
         self._worker_ready = Event()
         self._worker_error: BaseException | None = None
         self._startup_complete = False
@@ -122,6 +126,32 @@ class ResourceManager:
     def request(self, key: ResourceKey[ResourceT]) -> None:
         self._request_provider(self._provider(key))
 
+    def release(self, key: ResourceKey[ResourceT]) -> None:
+        """Schedule an on-demand instance for deterministic background cleanup."""
+
+        provider = self._provider(key)
+        if provider.policy != "on_demand":
+            raise RuntimeError(
+                f"startup resource '{key.id}' cannot be released at runtime"
+            )
+        with self._lock:
+            if provider.status == "unloaded":
+                return
+            if provider.status == "failed":
+                provider.error = None
+                provider.status = "unloaded"
+                provider.completed.set()
+                return
+            if provider.status == "loading":
+                provider.release_after_load = True
+                return
+            if provider.status == "unloading":
+                provider.reload_after_unload = False
+                return
+            provider.status = "unloading"
+            provider.completed.clear()
+            self._requests.put(("unload", provider))
+
     def status(self, key: ResourceKey[ResourceT]) -> ResourceStatus:
         return self._provider(key).status
 
@@ -146,7 +176,7 @@ class ResourceManager:
             return
         self._closed = True
         for provider in self._providers.values():
-            if provider.status == "loading":
+            if provider.status in {"loading", "unloading"}:
                 provider.completed.wait()
 
         first_error: Exception | None = None
@@ -184,11 +214,18 @@ class ResourceManager:
         if self._closed:
             raise RuntimeError("resource manager is closed")
         with self._lock:
+            if provider.status == "unloading":
+                provider.reload_after_unload = True
+                return
+            if provider.status == "loading" and provider.release_after_load:
+                provider.reload_after_unload = True
+                return
             if provider.status != "unloaded":
                 return
             provider.status = "loading"
+            provider.error = None
             provider.completed.clear()
-            self._requests.put(provider)
+            self._requests.put(("load", provider))
 
     def _run_worker(self) -> None:
         try:
@@ -205,9 +242,13 @@ class ResourceManager:
             return
 
         while True:
-            provider = self._requests.get()
-            if provider is None:
+            request = self._requests.get()
+            if request is None:
                 return
+            operation, provider = request
+            if operation == "unload":
+                self._unload_provider(provider)
+                continue
             try:
                 context = ResourceLoadContext(
                     mod_id=provider.owner,
@@ -216,13 +257,51 @@ class ResourceManager:
                 instance = provider.factory(context)
                 if instance is None:
                     raise RuntimeError("resource factory returned None")
-                provider.instance = instance
-                provider.status = "ready"
+                with self._lock:
+                    provider.instance = instance
+                    if provider.release_after_load:
+                        provider.release_after_load = False
+                        provider.status = "unloading"
+                        self._requests.put(("unload", provider))
+                    else:
+                        provider.status = "ready"
+                        provider.completed.set()
             except BaseException as exc:
-                provider.error = exc
+                with self._lock:
+                    provider.error = exc
+                    provider.status = "failed"
+                    provider.release_after_load = False
+                    provider.reload_after_unload = False
+                    provider.completed.set()
+
+    def _unload_provider(self, provider: _ResourceProvider[object]) -> None:
+        instance = provider.instance
+        error: BaseException | None = None
+        if instance is not None:
+            close = getattr(instance, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except BaseException as exc:
+                    error = exc
+        with self._lock:
+            provider.instance = None
+            if error is not None:
+                provider.error = error
                 provider.status = "failed"
-            finally:
+                provider.reload_after_unload = False
                 provider.completed.set()
+                return
+            provider.error = None
+            if provider.reload_after_unload and not self._closed:
+                provider.reload_after_unload = False
+                provider.status = "loading"
+                provider.completed.clear()
+                self._requests.put(("load", provider))
+                return
+            provider.reload_after_unload = False
+            provider.status = "unloaded"
+            provider.completed.set()
 
 
 __all__ = ["ResourceManager"]

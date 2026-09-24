@@ -1,0 +1,68 @@
+schema: 1
+id: com.bxi.amp_elf3
+name: ELF3 原生 AMP
+version: 1.0.1
+api: ">=4,<5"
+enable: true
+entrypoint: plugin:create_mod
+visibility: public
+requires:
+  - id: com.bxi.basic_actions
+    version: ">=1,<2"
+conflicts: []
+python_exports: []
+runtime_requirements:
+  python: []
+  ros: []
+  system: []
+
+events:
+  amp_elf3:
+    slot: btn_10
+    value: 57
+
+speed_profiles:
+  amp_elf3:
+    # The stock remote_controller publishes normalized stick values in [-1, 1].
+    # The speed profile converts them to the V4 physical command envelope.
+    vx_scale: 1.0
+    vx_min: -0.6
+    vx_max: 1.0
+    vy_scale: 1.0
+    vy_min: -1.0
+    vy_max: 1.0
+    yaw_scale: 1.0
+    # Pure rotation supports +/-2 rad/s; state.py reduces this to +/-1 while translating.
+    yaw_min: -2.0
+    yaw_max: 2.0
+
+states:
+  amp_elf3:
+    manifest:
+      label: ELF3 AMP
+      priority: 935
+      group: Advanced
+      icon: directions_run
+      confirm: false
+    speed_profile: amp_elf3
+
+routes:
+  - from: com.bxi.basic_actions/pd_brake
+    event: amp_elf3
+    to: amp_elf3
+    transition: soft_switch
+  - from: com.bxi.basic_actions/normal
+    event: amp_elf3
+    to: amp_elf3
+    transition: soft_switch
+  - from: amp_elf3
+    event: com.bxi.basic_actions/normal
+    to: com.bxi.basic_actions/normal
+    transition: soft_switch
+  - from: amp_elf3
+    event: com.bxi.basic_actions/zero_torque
+    to: com.bxi.basic_actions/zero_torque
+  - from: amp_elf3
+    event: com.bxi.basic_actions/pd_brake
+    to: com.bxi.basic_actions/pd_brake
+    transition: first_frame_switch

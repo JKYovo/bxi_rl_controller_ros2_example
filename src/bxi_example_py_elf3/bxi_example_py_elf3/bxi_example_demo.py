@@ -122,6 +122,9 @@ class BxiExample(Node):
         self.quat_xyzw = np.zeros(4, dtype=np.double)
         self.quat_wxyz = np.zeros(4, dtype=np.double)
         self.raw_cmd_vel = np.zeros(3, dtype=np.float32)
+        self.world_position = np.zeros(3, dtype=np.float64)
+        self.world_position_timestamp_ns = 0
+        self._world_position_received = False
         self.pending_remote_events = deque()
         self._joint_source = NamedJointStateSource(dtype=np.float64)
         self._joint_received = False
@@ -132,6 +135,7 @@ class BxiExample(Node):
         self._omega_snapshot = np.zeros(3, dtype=np.float64)
         self._linear_acceleration_snapshot = np.zeros(3, dtype=np.float64)
         self._cmd_snapshot = np.zeros(3, dtype=np.float32)
+        self._world_position_snapshot = np.zeros(3, dtype=np.float64)
         self._observation: RobotObservation | None = None
 
         # 控制循环初始化
@@ -332,6 +336,8 @@ class BxiExample(Node):
                     omega=self._omega_snapshot,
                     raw_cmd_vel=self._cmd_snapshot,
                     linear_acceleration=self._linear_acceleration_snapshot,
+                    world_position=None,
+                    world_position_timestamp_ns=0,
                 )
             self._joint_snapshot.update(
                 latest_joints.position,
@@ -343,6 +349,15 @@ class BxiExample(Node):
             np.copyto(self._omega_snapshot, self.omega)
             np.copyto(self._linear_acceleration_snapshot, self.linear_acceleration)
             np.copyto(self._cmd_snapshot, self.raw_cmd_vel)
+            if self._world_position_received:
+                np.copyto(self._world_position_snapshot, self.world_position)
+                self._observation.world_position = self._world_position_snapshot
+                self._observation.world_position_timestamp_ns = int(
+                    self.world_position_timestamp_ns
+                )
+            else:
+                self._observation.world_position = None
+                self._observation.world_position_timestamp_ns = 0
             events = tuple(self.pending_remote_events)
             self.pending_remote_events.clear()
         assert self._observation is not None
@@ -545,8 +560,22 @@ class BxiExample(Node):
     def touch_callback(self, _msg):
         pass
 
-    def odom_callback(self, _msg):  # 全局里程计（上帝视角，仅限仿真使用）
-        pass
+    def odom_callback(self, msg):
+        """Capture fixed-frame localization without folding it into policy obs."""
+
+        position = msg.pose.pose.position
+        value = np.asarray((position.x, position.y, position.z), dtype=np.float64)
+        if not np.all(np.isfinite(value)):
+            self.get_logger().warning("ignoring non-finite odometry position")
+            return
+        stamp = msg.header.stamp
+        timestamp_ns = int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+        if timestamp_ns <= 0:
+            timestamp_ns = int(self.get_clock().now().nanoseconds)
+        with self.lock_in:
+            np.copyto(self.world_position, value)
+            self.world_position_timestamp_ns = timestamp_ns
+            self._world_position_received = True
 
 
 def main(args=None):

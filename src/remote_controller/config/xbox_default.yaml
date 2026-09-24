@@ -32,7 +32,8 @@ sources:
   # ×/○/□/△。js.axis.N 和 js.button.N 是 Linux joystick 驱动上报的编号。
   gamepad:
     type: joystick
-    device: /dev/input/jsBattleDragon
+    # 本地仿真主机当前枚举为 js0；74 真机保留其独立的 BattleDragon 别名配置。
+    device: /dev/input/js0
     priority: 50
     ready_timeout_ms: 1000
     loss_timeout_ms: 300
@@ -85,6 +86,9 @@ sources:
       keyboard.normal: {from: keyboard.key, key: "1", hold_ms: 200} # 1：普通站立/行走
       keyboard.pd_break: {from: keyboard.key, key: "!"}             # Shift+1：PD 刹车
       keyboard.sonic: {from: keyboard.key, key: "@"}               # Shift+2：SONIC 遥操
+      keyboard.holomotion: {from: keyboard.key, key: "#"}          # Shift+3：HoloMotion 遥操
+      keyboard.rgmt: {from: keyboard.key, key: "$"}                # Shift+4：RGMT 遥操
+      keyboard.three_actor_walk: {from: keyboard.key, key: "%"}    # Shift+5：ELF3 三策略平地行走
       keyboard.recover: {from: keyboard.key, key: "2"}             # 2：恢复站立
       keyboard.dance: {from: keyboard.key, key: "3"}               # 3：舞蹈
       keyboard.amp_run: {from: keyboard.key, key: "4"}             # 4：AMP 奔跑
@@ -94,6 +98,7 @@ sources:
       keyboard.applause: {from: keyboard.key, key: "8"}            # 8：鼓掌
       keyboard.hello: {from: keyboard.key, key: "9"}               # 9：打招呼
       keyboard.normal_depth: {from: keyboard.key, key: "0"}        # 0：深度相机行走
+      keyboard.amp_elf3: {from: keyboard.key, key: "g"}             # g：新增 ELF3 AMP Mod
 
 #预设的一些，输入曲线
 curves:
@@ -296,6 +301,9 @@ controls:
   keyboard.normal_event: {type: bool, inputs: [{source: keyboard.normal}]}
   keyboard.pd_break_event: {type: bool, inputs: [{source: keyboard.pd_break}]}
   keyboard.sonic_event: {type: bool, inputs: [{source: keyboard.sonic}]}
+  keyboard.holomotion_event: {type: bool, inputs: [{source: keyboard.holomotion}]}
+  keyboard.rgmt_event: {type: bool, inputs: [{source: keyboard.rgmt}]}
+  keyboard.three_actor_walk_event: {type: bool, inputs: [{source: keyboard.three_actor_walk}]}
   keyboard.recover_event: {type: bool, inputs: [{source: keyboard.recover}]}
   keyboard.dance_event: {type: bool, inputs: [{source: keyboard.dance}]}
   keyboard.amp_run_event: {type: bool, inputs: [{source: keyboard.amp_run}]}
@@ -305,6 +313,7 @@ controls:
   keyboard.applause_event: {type: bool, inputs: [{source: keyboard.applause}]}
   keyboard.hello_event: {type: bool, inputs: [{source: keyboard.hello}]}
   keyboard.normal_depth_event: {type: bool, inputs: [{source: keyboard.normal_depth}]}
+  keyboard.amp_elf3_event: {type: bool, inputs: [{source: keyboard.amp_elf3}]}
 
 #将统一的controls映射到输出
 outputs:
@@ -360,7 +369,7 @@ outputs:
 
     # RB+B（键盘 Shift+1）：PD 刹车 pd_brake。
     - output: btn_3=1
-      when: 
+      when:
         any:
           - - shoulder.right_event
             - button.b_event
@@ -528,6 +537,42 @@ outputs:
             - released: trigger.right_event
           - [keyboard.sonic_event]
 
+    # LB+RB+A（键盘 Shift+3）：HoloMotion 遥操。55 为新增 Mod 专用事件值。
+    - output: btn_10=55
+      when:
+        any:
+          - - shoulder.left_event
+            - shoulder.right_event
+            - button.a_event
+            - released: trigger.left_event
+            - released: trigger.right_event
+          - [keyboard.holomotion_event]
+
+    # LB+RB+B（键盘 Shift+4）：RGMT 遥操。56 为 RGMT Mod 专用事件值。
+    - output: btn_10=56
+      when:
+        any:
+          - - shoulder.left_event
+            - shoulder.right_event
+            - button.b_event
+            - released: trigger.left_event
+            - released: trigger.right_event
+          - [keyboard.rgmt_event]
+
+    # LT+RT（键盘 g）：新增 ELF3 AMP Mod；值 57 不占用既有按键映射。
+    - output: btn_10=57
+      when:
+        any:
+          - - trigger.left_event
+            - trigger.right_event
+            - released: shoulder.left_event
+            - released: shoulder.right_event
+            - released: button.a_event
+            - released: button.b_event
+            - released: button.x_event
+            - released: button.y_event
+          - [keyboard.amp_elf3_event]
+
     # LB+RB+Y：任意动作播放 any_motion。
     - output: btn_10=10
       when:
@@ -539,7 +584,9 @@ outputs:
             - released: trigger.right_event
 
     # 预留组合：四个辅助键 LB/RB/LT/RT 的全部状态 × A/B/X/Y。
-    # 已有映射保持 btn_1..btn_9 和 btn_10=1..10 不变；缺失组合使用 btn_10=11..54。
+    # 已有映射保持 btn_1..btn_9 和 btn_10=1..10 不变；其余组合使用 btn_10=11..54。
+    # LB+RB+A/B 已分配给 HoloMotion/RGMT（btn_10=55/56），原预留值
+    # 13/14 不再输出。
     # 约定：LB=shoulder.left，RB=shoulder.right，LT=trigger.left，RT=trigger.right。
 
     # A
@@ -557,24 +604,6 @@ outputs:
         - button.y_event
         - released: shoulder.left_event
         - released: shoulder.right_event
-        - released: trigger.left_event
-        - released: trigger.right_event
-
-    # LB+RB+A
-    - output: btn_10=13
-      when:
-        - shoulder.left_event
-        - shoulder.right_event
-        - button.a_event
-        - released: trigger.left_event
-        - released: trigger.right_event
-
-    # LB+RB+B
-    - output: btn_10=14
-      when:
-        - shoulder.left_event
-        - shoulder.right_event
-        - button.b_event
         - released: trigger.left_event
         - released: trigger.right_event
 
@@ -776,16 +805,18 @@ outputs:
         - button.b_event
         - released: trigger.right_event
 
-    # LB+RB+LT+X
+    # LB+RB+LT+X（键盘 Shift+5）：ELF3 三策略平地行走。
     - output: btn_10=37
       when:
-        - shoulder.left_event
-        - shoulder.right_event
-        - trigger.left_event
-        - button.x_event
-        - released: trigger.right_event
+        any:
+          - - shoulder.left_event
+            - shoulder.right_event
+            - trigger.left_event
+            - button.x_event
+            - released: trigger.right_event
+          - [keyboard.three_actor_walk_event]
 
-    # LB+RB+LT+Y
+    # LB+RB+LT+Y（ELF3 DWAQ）；值 38 由 com.bxi.dwaq_elf3 使用。
     - output: btn_10=38
       when:
         - shoulder.left_event
@@ -943,9 +974,9 @@ outputs:
 system:
   start:
     - "mkdir -p /var/log/bxi_log"
-    - "ros2 launch bxi_example_py_elf3 example_demo_hw.launch.py > /var/log/bxi_log/$(date +%Y-%m-%d_%H-%M-%S)_elf.log 2>&1 &"
-    - "ros2 launch bxi_example_bms bms.launch.py > /var/log/bxi_log/bms_$(date +%Y-%m-%d_%H-%M-%S)_bms.log 2>&1 &"
-    - "su bxi -c \"cd /home/bxi/bxi_ws/bxi_voice && ./bin/bxi-voice\" 2>&1 &"
+    - "bash -lc 'source /opt/ros/humble/setup.bash && source /opt/bxi/bxi_ros2_pkg/setup.bash && source /home/bxi/bxi_ws/bxi_rl_controller_ros2_example/install/setup.bash && export ROS_DOMAIN_ID=31 && ros2 launch bxi_example_py_elf3 example_demo_hw.launch.py > /var/log/bxi_log/$(date +%Y-%m-%d_%H-%M-%S)_elf.log 2>&1 &'"
+    - "bash -lc 'source /opt/ros/humble/setup.bash && source /opt/bxi/bxi_ros2_pkg/setup.bash && source /home/bxi/bxi_ws/bxi_rl_controller_ros2_example/install/setup.bash && export ROS_DOMAIN_ID=31 && ros2 launch bxi_example_bms bms.launch.py > /var/log/bxi_log/bms_$(date +%Y-%m-%d_%H-%M-%S)_bms.log 2>&1 &'"
+    - "if [ -x /home/bxi/bxi_ws/bxi_voice/bin/bxi-voice ]; then su bxi -c \"cd /home/bxi/bxi_ws/bxi_voice && ./bin/bxi-voice\" 2>&1 & fi"
   stop:
     - "killall -SIGINT hardware_elf3"
     - "killall -SIGINT bxi_example_py_elf3"

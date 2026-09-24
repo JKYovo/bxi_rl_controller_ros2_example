@@ -105,14 +105,14 @@ states:
       icon: anchor
   dance:
     manifest:
-      label: 林妹妹 easy V3
+      label: 跳舞
       priority: 950
       group: Advanced
       icon: star_shine
       confirm: true
       confirm_message: 请确保机器人周围1米范围内没有障碍物
     params:
-      start_frame: 10
+      start_frame: 100
   recover:
     manifest:
       label: 起身
@@ -213,9 +213,7 @@ routes:
   - from: normal
     event: dance
     to: dance
-    transition:
-      profile: dual_running_blend
-      duration: 1.0
+    transition: soft_switch
   - from: dance
     event: normal
     to: normal

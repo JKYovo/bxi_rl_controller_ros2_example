@@ -1,0 +1,59 @@
+schema: 1
+id: com.bxi.holomotion
+name: HoloMotion 遥操
+version: 1.1.0
+api: ">=4,<5"
+enable: true
+entrypoint: plugin:create_mod
+visibility: public
+requires:
+  - id: com.bxi.basic_actions
+    version: ">=1,<2"
+conflicts: []
+python_exports: []
+runtime_requirements:
+  python:
+    - import: numpy
+    - import: onnxruntime
+    - import: zmq
+  ros: []
+  system: []
+
+events:
+  activate:
+    slot: btn_10
+    value: 55
+states:
+  holomotion_teleop:
+    manifest:
+      label: HoloMotion 遥操
+      priority: 845
+      group: Advanced
+      icon: sports_esports
+      confirm: true
+      confirm_message: 一键启动 CPU HoloRetarget 和策略；连续 Pico reference 就绪前持续运行 Normal 站立策略
+    inference_hz: 50
+    params:
+      reference_uri: tcp://127.0.0.1:6001
+      reference_timeout_s: 0.6
+      max_inter_frame_gap_s: 0.06
+      tracking_blend_s: 0.4
+routes:
+  - from: com.bxi.basic_actions/normal
+    event: activate
+    to: holomotion_teleop
+    transition: soft_switch
+  - from: holomotion_teleop
+    event: com.bxi.basic_actions/normal
+    to: com.bxi.basic_actions/normal
+    transition: soft_switch
+  - from: holomotion_teleop
+    event: com.bxi.basic_actions/zero_torque
+    to: com.bxi.basic_actions/zero_torque
+  - from: holomotion_teleop
+    event: com.bxi.basic_actions/pd_brake
+    to: com.bxi.basic_actions/pd_brake
+  - from: holomotion_teleop
+    event: com.bxi.basic_actions/recover
+    to: com.bxi.basic_actions/recover
+    transition: soft_switch

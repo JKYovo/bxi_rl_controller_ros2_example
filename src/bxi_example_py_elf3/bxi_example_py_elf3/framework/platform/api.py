@@ -26,6 +26,10 @@ class RobotObservation:
     omega: FloatArray
     raw_cmd_vel: FloatArray
     linear_acceleration: FloatArray | None = None
+    # Optional external localization in a fixed world frame.  It is routing
+    # context only; policies must not silently append it to their observation.
+    world_position: FloatArray | None = None
+    world_position_timestamp_ns: int = 0
 
 
 class ControlPlatformAdapter(Protocol):

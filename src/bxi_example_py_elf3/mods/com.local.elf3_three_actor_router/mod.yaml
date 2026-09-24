@@ -1,0 +1,67 @@
+schema: 1
+id: com.local.elf3_three_actor_router
+name: ELF3 TienKung AMP 单策略走停（仅本地仿真）
+version: 1.1.0
+api: ">=4,<5"
+enable: true
+entrypoint: plugin:create_mod
+visibility: public
+requires:
+  - id: com.bxi.basic_actions
+    version: ">=1,<2"
+conflicts: []
+python_exports: []
+runtime_requirements:
+  python: []
+  ros: []
+  system: []
+
+events:
+  activate:
+    slot: btn_10
+    # 手柄 LB+RB+LT+X；键盘 Shift+5。
+    value: 37
+
+speed_profiles:
+  commissioning_cardinal:
+    vx_scale: 0.375
+    vx_min: -0.25
+    vx_max: 0.375
+    vy_scale: 0.20
+    vy_min: -0.20
+    vy_max: 0.20
+    yaw_scale: 0.40
+    yaw_min: -0.40
+    yaw_max: 0.40
+
+states:
+  safe_three_actor_walk:
+    manifest:
+      label: ELF3 TienKung AMP 离线仿真
+      priority: 930
+      group: Commissioning
+      icon: health_and_safety
+      confirm: true
+      confirm_message: 仅限吊装或保护架；确认急停、限位、通信和旁站人员均已就绪
+    speed_profile: commissioning_cardinal
+    inference_hz: 50.0
+
+routes:
+  - from: com.bxi.basic_actions/normal
+    event: activate
+    to: safe_three_actor_walk
+    transition: soft_switch
+
+  - from: safe_three_actor_walk
+    event: com.bxi.basic_actions/normal
+    to: com.bxi.basic_actions/normal
+    transition: soft_switch
+
+  - from: safe_three_actor_walk
+    event: com.bxi.basic_actions/pd_brake
+    to: com.bxi.basic_actions/pd_brake
+    transition: soft_switch
+
+  - from: safe_three_actor_walk
+    event: com.bxi.basic_actions/zero_torque
+    to: com.bxi.basic_actions/zero_torque

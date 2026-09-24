@@ -21,6 +21,7 @@ class InferenceFrame:
     command: NDArray[np.floating] | None = None
     base_linear_velocity: NDArray[np.floating] | None = None
     world_position: NDArray[np.floating] | None = None
+    world_position_timestamp_ns: int = 0
     depth: NDArray[np.floating] | None = None
     depth_frame_id: int | None = None
     timestamp_ns: int = 0

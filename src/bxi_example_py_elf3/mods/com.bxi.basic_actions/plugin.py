@@ -40,7 +40,6 @@ NORMAL_RUN_POLICY = ResourceKey[NormalMotionPolicyMjlab](
 DANCE_POLICY = ResourceKey[DanceMotionPolicyGravityIsaaclabV3](
     "com.bxi.basic_actions/dance_policy"
 )
-DANCE_END_FRAME = 2002
 LIE_DOWN_POLICY = ResourceKey[DanceMotionPolicyGravityIsaaclabV2](
     "com.bxi.basic_actions/lie_down_policy"
 )
@@ -54,7 +53,7 @@ def _load_normal_policy(
     context: ResourceLoadContext,
 ) -> HumanoidGaitPolicyLiteIsaaclab:
     return HumanoidGaitPolicyLiteIsaaclab(
-        str(context.asset("assets/amp_terrain_old.onnx"))
+        str(context.asset("assets/amp_terrain.onnx"))
     )
 
 
@@ -81,14 +80,12 @@ def _load_normal_run_policy(context: ResourceLoadContext) -> NormalMotionPolicyM
 def _load_dance_policy(
     context: ResourceLoadContext,
 ) -> DanceMotionPolicyGravityIsaaclabV3:
-    policy = DanceMotionPolicyGravityIsaaclabV3(
-        str(context.asset("assets/lmm.npz")),
-        str(context.asset("assets/lmm_easy_12600.onnx")),
-        start_frame=0,
+    return DanceMotionPolicyGravityIsaaclabV3(
+        str(context.asset("assets/shuishou.npz")),
+        str(context.asset("assets/shuishou.onnx")),
+        start_frame=60,
         fixed_pos=True,
     )
-    policy.configure_range(end_frame=DANCE_END_FRAME)
-    return policy
 
 
 def _load_lie_down_policy(
@@ -160,7 +157,7 @@ def create_mod(context: ModLoadContext) -> ModDefinition:
                 state.name,
                 state.state_id,
                 dance_policy,
-                start_frame=state.int_param("start_frame", 10),
+                start_frame=state.int_param("start_frame", 100),
             ),
             "recover": lambda state: RecoverState(
                 state.name, state.state_id, recover_policy

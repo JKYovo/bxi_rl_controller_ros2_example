@@ -67,6 +67,7 @@ class RobotControlFramework:
         self.current_quat_wxyz = np.zeros(4, dtype=np.float64)
         self.current_omega = np.zeros(3, dtype=np.float64)
         self.current_linear_acceleration = np.zeros(3, dtype=np.float64)
+        self.current_world_position = np.zeros(3, dtype=np.float64)
         self.current_raw_cmd_vel = np.zeros(3, dtype=np.float32)
         self.current_cmd_vel = np.zeros(3, dtype=np.float32)
         self._command_defaults = command_defaults
@@ -485,6 +486,19 @@ class RobotControlFramework:
                 "linear_acceleration",
             )
             self.inference_frame.linear_acceleration = self.current_linear_acceleration
+        if observation.world_position is None:
+            self.inference_frame.world_position = None
+            self.inference_frame.world_position_timestamp_ns = 0
+        else:
+            self._copy_vector(
+                observation.world_position,
+                self.current_world_position,
+                "world_position",
+            )
+            self.inference_frame.world_position = self.current_world_position
+            self.inference_frame.world_position_timestamp_ns = int(
+                observation.world_position_timestamp_ns
+            )
         self._copy_vector(
             observation.raw_cmd_vel,
             self.current_raw_cmd_vel,
@@ -517,6 +531,8 @@ class RobotControlFramework:
             command=self.current_cmd_vel,
             timestamp_ns=joints.timestamp_ns,
             linear_acceleration=None,
+            world_position=None,
+            world_position_timestamp_ns=0,
         )
 
     @staticmethod

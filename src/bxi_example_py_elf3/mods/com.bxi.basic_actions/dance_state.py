@@ -23,7 +23,7 @@ class DanceState(RobotControlState, EntryFrameProvider, RunningFrameProvider):
         state_id: int,
         policy: ResourceHandle[DanceMotionPolicyGravityIsaaclabV3],
         *,
-        start_frame: int,
+        start_frame: int
     ) -> None:
         super().__init__(name, state_id, resources=(policy,))
         self._policy = policy

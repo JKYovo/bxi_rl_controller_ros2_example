@@ -1,0 +1,71 @@
+schema: 1
+id: com.bxi.dwaq_elf3
+name: ELF3 DWAQ
+version: 1.0.0
+api: ">=4,<5"
+enable: true
+entrypoint: plugin:create_mod
+visibility: public
+requires:
+  - id: com.bxi.basic_actions
+    version: ">=1,<2"
+conflicts: []
+python_exports: []
+runtime_requirements:
+  python:
+    - import: numpy
+    - import: onnxruntime
+  ros: []
+  system: []
+
+events:
+  activate:
+    slot: btn_10
+    # 手柄 LB+RB+LT+Y；复用遥控器预留值 38。
+    value: 38
+
+speed_profiles:
+  dwaq_elf3:
+    # These are the command limits used by the 100-D observation contract.
+    vx_scale: 1.0
+    vx_min: -0.6
+    vx_max: 1.0
+    vy_scale: 1.0
+    vy_min: -0.5
+    vy_max: 0.5
+    yaw_scale: 1.0
+    yaw_min: -1.57
+    yaw_max: 1.57
+
+states:
+  dwaq_elf3:
+    manifest:
+      label: ELF3 DWAQ
+      priority: 934
+      group: Advanced
+      icon: directions_run
+      confirm: true
+      confirm_message: 请确保机器人处于吊装或保护架，并确认急停可用
+    speed_profile: dwaq_elf3
+    inference_hz: 50.0
+
+routes:
+  - from: com.bxi.basic_actions/normal
+    event: activate
+    to: dwaq_elf3
+    transition: soft_switch
+  - from: com.bxi.basic_actions/pd_brake
+    event: activate
+    to: dwaq_elf3
+    transition: soft_switch
+  - from: dwaq_elf3
+    event: com.bxi.basic_actions/normal
+    to: com.bxi.basic_actions/normal
+    transition: soft_switch
+  - from: dwaq_elf3
+    event: com.bxi.basic_actions/zero_torque
+    to: com.bxi.basic_actions/zero_torque
+  - from: dwaq_elf3
+    event: com.bxi.basic_actions/pd_brake
+    to: com.bxi.basic_actions/pd_brake
+    transition: first_frame_switch

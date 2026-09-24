@@ -1,0 +1,60 @@
+{
+  "artifact": "model_1000.onnx",
+  "robot": "ELF3 29-DoF without hands",
+  "training_lineage": "model_44000 actor -> exact affine migration -> new critic and optimizer -> iteration 1000",
+  "policy_frequency_hz": 50,
+  "policy_root_body": "waist_z_link",
+  "physical_data_reset_root": "torso_link",
+  "action_equation": "q_target = default_joint_pos + action_scale * raw_action",
+  "inputs": {
+    "obs": [1, 604],
+    "past_key_values": [1, 2, 1, 32, 4, 64],
+    "step_idx": [1]
+  },
+  "outputs": {
+    "actions": [1, 29],
+    "present_key_values": [1, 2, 1, 32, 4, 64],
+    "moe_layer_0_expert_indices": [1, 1, 2],
+    "moe_layer_0_expert_logits": [1, 1, 1024]
+  },
+  "rope_max_seq_len": 8192,
+  "joint_names": [
+    "l_hip_y_joint", "r_hip_y_joint", "waist_z_joint",
+    "l_hip_x_joint", "r_hip_x_joint", "waist_x_joint",
+    "l_hip_z_joint", "r_hip_z_joint", "waist_y_joint",
+    "l_knee_y_joint", "r_knee_y_joint",
+    "l_shoulder_y_joint", "r_shoulder_y_joint",
+    "l_ankle_y_joint", "r_ankle_y_joint",
+    "l_shoulder_x_joint", "r_shoulder_x_joint",
+    "l_ankle_x_joint", "r_ankle_x_joint",
+    "l_shoulder_z_joint", "r_shoulder_z_joint",
+    "l_elbow_y_joint", "r_elbow_y_joint",
+    "l_wrist_x_joint", "r_wrist_x_joint",
+    "l_wrist_y_joint", "r_wrist_y_joint",
+    "l_wrist_z_joint", "r_wrist_z_joint"
+  ],
+  "action_scale": [
+    0.213, 0.213, -0.213, 0.213, 0.213, -0.154, 0.231, 0.231,
+    -0.231, 0.213, 0.213, 0.231, 0.231, 0.373, 0.373, 0.231,
+    0.231, 0.230, 0.230, 0.373, 0.373, 0.231, 0.231, 0.373,
+    0.373, 0.373, 0.373, 0.373, 0.373
+  ],
+  "default_joint_pos": [
+    -0.300, -0.300, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.600, 0.600, 0.200, 0.200, -0.300, -0.300, 0.200,
+    -0.200, 0.000, 0.000, 0.000, 0.000, 0.600, 0.600, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000
+  ],
+  "joint_stiffness": [
+    176.421, 176.421, 176.421, 176.421, 176.421, 162.672, 54.224,
+    54.224, 108.448, 176.421, 176.421, 54.224, 54.224, 33.493,
+    33.493, 54.224, 54.224, 21.771, 21.771, 16.747, 16.747,
+    54.224, 54.224, 16.747, 16.747, 16.747, 16.747, 16.747, 16.747
+  ],
+  "joint_damping": [
+    11.231, 11.231, 11.231, 11.231, 11.231, 10.356, 3.452, 3.452,
+    6.904, 11.231, 11.231, 3.452, 3.452, 2.132, 2.132, 3.452,
+    3.452, 1.386, 1.386, 1.066, 1.066, 3.452, 3.452, 1.066,
+    1.066, 1.066, 1.066, 1.066, 1.066
+  ]
+}

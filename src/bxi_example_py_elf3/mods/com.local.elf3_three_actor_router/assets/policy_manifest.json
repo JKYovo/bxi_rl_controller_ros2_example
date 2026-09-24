@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "status": "UNQUALIFIED_OFFLINE_ONLY",
+  "source": "TienKung-Lab-bxi official AMP export",
+  "checkpoint_iteration": 33000,
+  "onnx_file": "assets/policy.onnx",
+  "onnx_sha256": "a29b1d7a6a92ea9185516e4ba775b3823d3e8d8b45bbb11482d6055662a8757e",
+  "abi": {
+    "input_name": "obs",
+    "input_shape": [1, 1020],
+    "output_name": "actions",
+    "output_shape": [1, 29],
+    "history_frames": 10,
+    "single_frame": 102,
+    "policy_dt_s": 0.02
+  },
+  "qualification": {
+    "deployable_to_hardware": false,
+    "qualification_passed": false,
+    "reason": "vendor handoff reports Isaac functional 6/8 and MuJoCo hard joint-limit violations"
+  }
+}

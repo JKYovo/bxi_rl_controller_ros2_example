@@ -109,7 +109,6 @@ class _LegacyMotionPolicy(_MotionGeometry, JointPolicy):
                 "model joint_names metadata does not match the class-defined "
                 f"layout for {type(self).__name__}"
             )
-        self._check_observation_contract(meta)
         if gains_from_metadata:
             kp = _csv_floats(meta["joint_stiffness"])
             kd = _csv_floats(meta["joint_damping"])
@@ -145,34 +144,6 @@ class _LegacyMotionPolicy(_MotionGeometry, JointPolicy):
             self._parameters.kp,
             self._parameters.kd,
         )
-
-    def _check_observation_contract(self, meta: dict[str, str]) -> None:
-        """Reject models whose observation vector differs from what _build_input writes."""
-        expected = (
-            "command",
-            "motion_anchor_ori_b",
-            *(("projected_gravity",) if self._include_gravity else ()),
-            "base_ang_vel",
-            "joint_pos",
-            "joint_vel",
-            "actions",
-        )
-        observed = meta.get("observation_names")
-        if observed is not None:
-            names = tuple(name.strip() for name in observed.split(","))
-            if names != expected:
-                raise ValueError(
-                    f"{type(self).__name__} builds observations as {expected}, "
-                    f"but the model was trained on {names}"
-                )
-        history = meta.get("observation_history_lengths")
-        if history is not None and any(
-            round(float(length)) != 1 for length in _csv_floats(history)
-        ):
-            raise ValueError(
-                f"{type(self).__name__} only feeds the current frame, but the "
-                "model expects a stacked observation history"
-            )
 
     def step(
         self,

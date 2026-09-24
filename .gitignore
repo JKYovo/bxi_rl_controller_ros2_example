@@ -37,7 +37,14 @@ htmlcov/
 # Local/private source trees
 /src/livox_ros_driver2/
 /src/bxi_example_py_elf3/mods/private_mods/
+/src/bxi_example_py_elf3/mods/private_git_mods/
 /src/bxi_example_py_elf3/test/*
+
+# HoloMotion deployment models are stored outside GitHub because they exceed
+# GitHub's regular per-file limit.  Add them explicitly only when using an
+# external artifact store or Git LFS.
+/src/bxi_example_py_elf3/mods/com.bxi.holomotion/assets/model_43000.onnx
+/src/bxi_example_py_elf3/mods/com.bxi.holomotion/assets/native_affine_migrated_1000_20260901/*.onnx
 
 # Local editor, agent and documentation workspaces
 /.vscode/

@@ -1,0 +1,63 @@
+schema: 1
+id: com.bxi.rgmt
+name: RGMT 遥操
+version: 1.0.0
+api: ">=4,<5"
+enable: true
+entrypoint: plugin:create_mod
+visibility: public
+requires:
+  - id: com.bxi.basic_actions
+    version: ">=1,<2"
+conflicts: []
+python_exports: []
+runtime_requirements:
+  python:
+    - import: numpy
+    - import: onnxruntime
+    - import: zmq
+  ros: []
+  system: []
+
+events:
+  activate:
+    slot: btn_10
+    value: 56
+
+states:
+  rgmt_teleop:
+    manifest:
+      label: RGMT 遥操
+      priority: 844
+      group: Advanced
+      icon: sports_esports
+      # 实体遥控器只有一个 RGMT 激活脉冲（LB+RB+B）；不再要求额外确认事件。
+      confirm: false
+      confirm_message: 一键启动 CPU HoloRetarget 和 RGMT；连续 21 帧 reference 就绪前持续运行 Normal 站立策略
+    inference_hz: 50
+    params:
+      reference_uri: tcp://127.0.0.1:6001
+      reference_timeout_s: 0.6
+      max_inter_frame_gap_s: 0.06
+      tracking_blend_s: 0.4
+
+routes:
+  - from: com.bxi.basic_actions/normal
+    event: activate
+    to: rgmt_teleop
+    transition: soft_switch
+  - from: rgmt_teleop
+    event: com.bxi.basic_actions/normal
+    to: com.bxi.basic_actions/normal
+    transition: soft_switch
+  - from: rgmt_teleop
+    event: com.bxi.basic_actions/zero_torque
+    to: com.bxi.basic_actions/zero_torque
+  - from: rgmt_teleop
+    event: com.bxi.basic_actions/pd_brake
+    to: com.bxi.basic_actions/pd_brake
+    transition: first_frame_switch
+  - from: rgmt_teleop
+    event: com.bxi.basic_actions/recover
+    to: com.bxi.basic_actions/recover
+    transition: soft_switch
